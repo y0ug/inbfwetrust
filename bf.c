@@ -162,9 +162,9 @@ void* worker_ (void* _ctx){
 	fprintf(stderr, "[%02d] end\n", ctx->thread_id);
 }
 
-void bf_init(){
+void bf_init(unsigned long long seed){
 	pthread_mutex_init(&lock_offset, NULL);
-	global_offset = 0;
+	global_offset = seed;
 }
 
 /*

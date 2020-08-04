@@ -21,6 +21,6 @@ typedef struct _bf_ctx{
 
 
 void* worker_ (void* _ctx);
-void bf_init();
+void bf_init(unsigned long long seed);
 
 #endif

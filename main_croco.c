@@ -103,6 +103,7 @@ void main(int argc, char** argv){
 	double possibility = 0;
 	//unsigned long long work_size = 100000000;
 	unsigned long long work_size = 5000000;
+	unsigned long long seed = 0;
 
 	static char charset[] = "abcdefghijklmnopqrstuvwxyz0123456789-_.";
 	char charset_len = sizeof(charset) - 1;
@@ -118,6 +119,9 @@ void main(int argc, char** argv){
 	if (argc > 3)
 		thread_nb= atoi(argv[3]);
 
+	if (argc > 4)
+		seed = atoll(argv[4]);
+
 	fprintf(stderr, "len_min: %d len_max: %d, threads: %d\n", 
 			len_min, len_max, thread_nb);
 
@@ -128,7 +132,7 @@ void main(int argc, char** argv){
 	fprintf(stderr, "charset_len: %d possibility: %.0lf\n", charset_len, possibility);
 
 
-	bf_init();
+	bf_init(seed);
 	pthread_t thread[thread_nb];
 	bf_ctx ctx[thread_nb];
 	for (t = 0; t < thread_nb; ++t){
