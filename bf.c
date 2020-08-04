@@ -117,7 +117,7 @@ void* worker_ (void* _ctx){
 		start = clock();
 		for(i = cur_offset; i <= end_offset; ++i){
 			ctx->process (data, ctx->len, ctx->process_ctx);
-			//fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
+			fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
 
 			if (i+1 == next_len_offset){
 				++i;
@@ -128,11 +128,11 @@ void* worker_ (void* _ctx){
 				memset(offset, 0, ctx->len); 
 
 				next_len_offset = nextlen(ctx->len_min, ctx->len_max, 
-						ctx->charset_len, cur_offset);
+						ctx->charset_len, i);
 
 				// We process the first elem of the new len
 				ctx->process (data, ctx->len, ctx->process_ctx);
-				//fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
+				fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
 			}
 			next(offset, data, 
 					ctx->charset, ctx->charset_len, 
@@ -144,10 +144,10 @@ void* worker_ (void* _ctx){
 		fprintf(stderr, "[%02d] %.2fs %.0fc/s\n", ctx->thread_id, seconds, (end_offset-cur_offset)/seconds);
 
 		// fetch work offset
-	    pthread_mutex_lock(&lock_offset);
+		pthread_mutex_lock(&lock_offset);
 		cur_offset = global_offset;
 		global_offset += ctx->work_size;
-	    pthread_mutex_unlock(&lock_offset); 	
+		pthread_mutex_unlock(&lock_offset); 	
 
 		memset(data, 0, ctx->len_max);
 		memset(offset, 0, ctx->len_max);
@@ -168,56 +168,56 @@ void bf_init(unsigned long long seed){
 }
 
 /*
-void main(int argc, char** argv){
-	setvbuf(stdout, NULL, _IONBF, 0);
-	setvbuf(stderr, NULL, _IONBF, 0);
+   void main(int argc, char** argv){
+   setvbuf(stdout, NULL, _IONBF, 0);
+   setvbuf(stderr, NULL, _IONBF, 0);
 
-	int len_min, len_max;
-	int i, t;
-	int thread_nb = 8;
-	double possibility = 0;
-	//unsigned long long work_size = 100000000;
-	unsigned long long work_size = 5000000;
+   int len_min, len_max;
+   int i, t;
+   int thread_nb = 8;
+   double possibility = 0;
+//unsigned long long work_size = 100000000;
+unsigned long long work_size = 5000000;
 
 
-	if (argc < 3){
-		printf ("usage %s len_min len_max\n", argv[0]);
-		exit (0);
-	}    
+if (argc < 3){
+printf ("usage %s len_min len_max\n", argv[0]);
+exit (0);
+}    
 
-	len_min = atoi(argv[1]);
-	len_max = atoi(argv[2]);
+len_min = atoi(argv[1]);
+len_max = atoi(argv[2]);
 
-	if (argc > 3)
-		thread_nb= atoi(argv[3]);
+if (argc > 3)
+thread_nb= atoi(argv[3]);
 
-	fprintf(stderr, "len_min: %d len_max: %d, threads: %d\n", 
-			len_min, len_max, thread_nb);
+fprintf(stderr, "len_min: %d len_max: %d, threads: %d\n", 
+len_min, len_max, thread_nb);
 
-	for(i=len_min; i < len_max; ++i){
-		possibility += pow((double)(MAX - MIN), (double)i);
-	}
+for(i=len_min; i < len_max; ++i){
+possibility += pow((double)(MAX - MIN), (double)i);
+}
 
-	fprintf(stderr, "charset_len: %d possibility: %.0lf\n", (MAX-MIN), possibility);
+fprintf(stderr, "charset_len: %d possibility: %.0lf\n", (MAX-MIN), possibility);
 
-	pthread_mutex_init(&lock_offset, NULL);
+pthread_mutex_init(&lock_offset, NULL);
 
-	pthread_t thread[thread_nb];
-	bf_ctx ctx[thread_nb];
-	for (t = 0; t < thread_nb; ++t){
-		ctx[t].process = test_;
-		//ctx[t].process = crc_callback;
-		ctx[t].process_ctx = NULL;
-		ctx[t].thread_id = t;
-		ctx[t].possibility = possibility;
-		ctx[t].work_size = work_size;
-		ctx[t].len_max = len_max;
-		ctx[t].len_min = len_min;
-		pthread_create (&thread[t], NULL, worker_, &ctx[t]);
-	}
+pthread_t thread[thread_nb];
+bf_ctx ctx[thread_nb];
+for (t = 0; t < thread_nb; ++t){
+ctx[t].process = test_;
+//ctx[t].process = crc_callback;
+ctx[t].process_ctx = NULL;
+ctx[t].thread_id = t;
+ctx[t].possibility = possibility;
+ctx[t].work_size = work_size;
+ctx[t].len_max = len_max;
+ctx[t].len_min = len_min;
+pthread_create (&thread[t], NULL, worker_, &ctx[t]);
+}
 
-	for (t = 0; t < thread_nb; ++t){
-		pthread_join (thread[t], NULL);
-	}
+for (t = 0; t < thread_nb; ++t){
+pthread_join (thread[t], NULL);
+}
 }
 */

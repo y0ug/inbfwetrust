@@ -1,4 +1,4 @@
-#include "data.h"
+#include "data_4096.h"
 #include "bf.h"
 #include "crypto/aes-ni.h"
 
@@ -45,7 +45,46 @@ memmem (const void *haystack, size_t haystack_len, const void *needle,
 }
 #endif
 
-int test_ (char* buffer, int len, void* _ctx){
+int find_pe(char* buffer, int len, void* _ctx){
+	uint8_t key[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+
+	uint8_t iv[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+
+	char magic[] = "This program cannot be run in DOS mode";
+
+	int i;
+	uint8_t *pos;
+	char data[enc_data_len];
+
+	memcpy(key, buffer, len);
+	
+	__m128i key_schedule[20];
+
+	aes128_load_key(key_schedule, key);
+
+		
+	for(i = 0; i < enc_data_len; i+=16){
+
+		aes128_dec(key_schedule, enc_data + i, data + i);
+		XOR64(data + i , iv);
+		memcpy(iv, enc_data + i , 16);
+
+	}
+	
+	pos = memmem(data, enc_data_len, magic, sizeof(magic)-1);
+	if(pos != NULL){
+		printf("match, key 0x%08llx (%s)\n", *(uint64_t*)key, buffer);
+	}
+	return 0;
+}
+
+int find_zero(char* buffer, int len, void* _ctx){
 	uint8_t key[] = {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -73,19 +112,12 @@ int test_ (char* buffer, int len, void* _ctx){
 
 		
 	for(i = 0; i < enc_data_len; i+=16){
-
 		aes128_dec(key_schedule, enc_data + i, data + i);
 		XOR64(data + i , iv);
 		memcpy(iv, enc_data + i , 16);
 
-		/*for(j = 0; j < 16; j++){
-			printf("%c", data[j]);
-		}*/
 	}
 	
-	/*if(memcmp(data, magic, enc_data_len) == 0){
-		printf("match, key 0x%08llx (%s)\n", *(uint64_t*)key, buffer);
-	}*/
 	pos = memmem(data, enc_data_len, magic, sizeof(magic));
 	if(pos != NULL){
 		printf("match, key 0x%08llx (%s)\n", *(uint64_t*)key, buffer);
@@ -101,8 +133,7 @@ void main(int argc, char** argv){
 	int i, t;
 	int thread_nb = 8;
 	double possibility = 0;
-	//unsigned long long work_size = 100000000;
-	unsigned long long work_size = 5000000;
+	unsigned long long work_size = 10000000;
 	unsigned long long seed = 0;
 
 	static char charset[] = "abcdefghijklmnopqrstuvwxyz0123456789-_.";
@@ -129,7 +160,8 @@ void main(int argc, char** argv){
 		possibility += pow((double)(charset_len), (double)i);
 	}
 
-	fprintf(stderr, "charset_len: %d possibility: %.0lf\n", charset_len, possibility);
+	fprintf(stderr, "charset_len: %d possibility: %.0lf seed: %lld\n", 
+			charset_len, possibility, seed);
 
 
 	bf_init(seed);
@@ -147,7 +179,8 @@ void main(int argc, char** argv){
 		ctx[t].charset = charset;
 		ctx[t].charset_len = charset_len;
 
-		ctx[t].process = test_;
+		ctx[t].process = find_zero;
+		//ctx[t].process = find_pe;
 		ctx[t].process_ctx = NULL;
 
 
