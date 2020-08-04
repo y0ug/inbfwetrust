@@ -117,7 +117,7 @@ void* worker_ (void* _ctx){
 		start = clock();
 		for(i = cur_offset; i <= end_offset; ++i){
 			ctx->process (data, ctx->len, ctx->process_ctx);
-			fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
+			//fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
 
 			if (i+1 == next_len_offset){
 				++i;
@@ -132,7 +132,7 @@ void* worker_ (void* _ctx){
 
 				// We process the first elem of the new len
 				ctx->process (data, ctx->len, ctx->process_ctx);
-				fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
+				//fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
 			}
 			next(offset, data, 
 					ctx->charset, ctx->charset_len, 
