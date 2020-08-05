@@ -1,4 +1,4 @@
-#include "data_4096.h"
+#include "data.h"
 #include "bf.h"
 #include "crypto/aes-ni.h"
 
@@ -159,6 +159,7 @@ void main(int argc, char** argv){
 	for(i=len_min; i < len_max; ++i){
 		possibility += pow((double)(charset_len), (double)i);
 	}
+	//possibility = pow((double)(charset_len), (double)len_max);
 
 	fprintf(stderr, "charset_len: %d possibility: %.0lf seed: %lld\n", 
 			charset_len, possibility, seed);

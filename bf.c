@@ -17,7 +17,7 @@ int next (char* o, char *k,
 		int len){
 	int i;
 	for (i = 0; i < len; ++i){
-		if (o[i] != charset_len - 1){
+		if (o[i] < charset_len - 1){
 			++o[i];
 			k[i] = charset[o[i]];
 			return i;
@@ -73,7 +73,7 @@ int nextlen(int len_min, int len_max,
 
 	for(i=len_min; i < len_max; ++i){
 		x = pow(charset_len, (double)i);
-		if (x > seed) { 
+		if (x >= seed) { 
 			break;
 		}
 	}
@@ -108,22 +108,23 @@ void* worker_ (void* _ctx){
 
 	while(cur_offset < ctx->possibility){
 		fprintf(stderr, "[%02d] starting at %lld (%s)\n", ctx->thread_id, cur_offset, data);
-		end_offset = cur_offset+ctx->work_size-1;
-		if(end_offset > ctx->possibility){ end_offset = ctx->possibility-1; }
+		end_offset = fmin(ctx->possibility-1, cur_offset+ctx->work_size-1);
+		//if(end_offset > ctx->possibility){ end_offset = ctx->possibility-1; }
 		//seed2char(ctx->len_min, ctx->len_max, end_offset, data, offset);
 		//fprintf(stderr, "[%02d] ending at %lld (%s)\n", ctx->thread_id, end_offset, data) ;
 
 
 		start = clock();
-		for(i = cur_offset; i <= end_offset; ++i){
+		for(i = cur_offset; i < end_offset; ++i){
 			ctx->process (data, ctx->len, ctx->process_ctx);
-			//fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
+			//fprintf(stderr, "[%02d] (%d) %s %02x%02x\n", ctx->thread_id, ctx->len, data, data[0], data[1]);
 
 			if (i+1 == next_len_offset){
+				//fprintf(stderr, "[%02d] prev len %lld (%s)\n", ctx->thread_id, i, data) ;
 				++i;
-
 				ctx->len++;
 				// New len we reset data and offset
+				memset(data, 0, ctx->len_max);
 				memset(data, ctx->charset[0], ctx->len); 
 				memset(offset, 0, ctx->len); 
 
@@ -132,15 +133,22 @@ void* worker_ (void* _ctx){
 
 				// We process the first elem of the new len
 				ctx->process (data, ctx->len, ctx->process_ctx);
+				//fprintf(stderr, "[%02d] next len %lld %d (%s)\n", ctx->thread_id, i, ctx->len, data) ;
 				//fprintf(stderr, "[%02d] (%d) %s\n", ctx->thread_id, ctx->len, data);
+				//fprintf(stderr, "[%02d] (%d) %s %02x%02x\n", ctx->thread_id, ctx->len, data, data[0], data[1]);
 			}
+			if(i > end_offset){ break;}
 			next(offset, data, 
 					ctx->charset, ctx->charset_len, 
-					ctx->len); 
+					ctx->len);
 		}
+
+		ctx->process (data, ctx->len, ctx->process_ctx);
+		//fprintf(stderr, "[%02d]_(%d) %s %02x%02x\n", ctx->thread_id, ctx->len, data, data[0], data[1]);
+
 		end = clock();
 		seconds = (float)(end - start) / CLOCKS_PER_SEC;
-		fprintf(stderr, "[%02d] end at (%d) %s\n", ctx->thread_id, ctx->len, data);
+		fprintf(stderr, "[%02d] end at %lld (%d) %s\n", ctx->thread_id, i, ctx->len, data);
 		fprintf(stderr, "[%02d] %.2fs %.0fc/s\n", ctx->thread_id, seconds, (end_offset-cur_offset)/seconds);
 
 		// fetch work offset
